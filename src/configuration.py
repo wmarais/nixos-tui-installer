@@ -2,7 +2,6 @@ import yaml
 from dataclasses import dataclass, asdict
 from typing import Self, Dict, Any
 from enum import Enum
-import array
 
 class FileSystem(Enum):
     BTRFS:      str = "btrfs"
@@ -99,6 +98,9 @@ class Role(Enum):
 class MountPoint:
     path: str
     options: list[str]
+
+    def to_yml(cls, representer, node):
+        pass
 
 @dataclass
 class Partition:
@@ -228,14 +230,14 @@ def asdict_factory(data: Any) -> Dict[str, Any]:
         if isinstance(obj, Enum):
             return obj.value
         return obj
-    result = dict(data)
-    # Check if the first element of 'data' is a field from a dataclass instance
-    # and if that instance has a __class__ attribute.
-    if data and hasattr(data[0][1], '__class__'):
-        # Get the class name from the instance
-        class_name = data[0][1].__class__.__name__
-        result['__class__'] = class_name
-        return result
+    # result = dict(data)
+    # # Check if the first element of 'data' is a field from a dataclass instance
+    # # and if that instance has a __class__ attribute.
+    # if data and hasattr(data[0][1], '__class__'):
+    #     # Get the class name from the instance
+    #     class_name = data[0][1].__class__.__name__
+    #     result['__class__'] = class_name
+    #     return result
 
     return dict((k, convert_value(v)) for k, v in data)
 
@@ -262,7 +264,7 @@ if __name__ == "__main__":
 
     # Setup the example storage configuration.
     storage = Storage("single_disk_zfs_root", "A single disk structure with a ZFS root.", 
-                      [device], zfs)
+                      [("device", device)], zfs)
     
     network = Network("mypc01", "12345678", ["192.168.1.1/24"], [], "", False, False, True, None)
     

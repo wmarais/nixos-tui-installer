@@ -3,7 +3,8 @@ let
   pythonEnv =  pkgs.python313.withPackages (ps: with ps; [
     pip
     virtualenv
-    pyyaml
+    #pyyaml
+    ruyaml
     psutil
     debugpy
   ]);
