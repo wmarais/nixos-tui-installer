@@ -2,6 +2,7 @@
 
 import argparse
 
+import os
 import subprocess
 from src.configuration import *
 
@@ -46,5 +47,25 @@ parser.add_argument('-e', '--exact', action='store_true',
                     "failed host")
 
 args = parser.parse_args()
-print(args)
+
+
+config = None
+
+# Check if the user want to load an existing configuration.
+if args.load:
+    print(f"Loading: {args.load}/config.yml")
+    config = Configuration.load(f"{args.load}/config.yml")
+
+# Check if the user want to run the automatic installer.
+if args.run:
+    setup_partitions(config.storage.devices)
+
+# Check if the user want to save the configuration.
+if args.save:
+    print(f"Saving Configuration: {args.save}/config.yml")
+    if not os.path.exists(args.save):
+        os.makedirs(args.save)
+    config.save(f"{args.save}/config.yml")
+
+
 
