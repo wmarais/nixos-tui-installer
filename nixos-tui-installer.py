@@ -49,7 +49,7 @@ parser.add_argument('-e', '--exact', action='store_true',
 args = parser.parse_args()
 
 
-config = None
+config: Configuration = None
 
 # Check if the user want to load an existing configuration.
 if args.load:
