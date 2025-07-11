@@ -1,7 +1,6 @@
-import yaml
 from dataclasses import dataclass, asdict
 from dataclass_wizard import YAMLWizard
-from typing import Self, Dict, Any
+from typing import Self
 from enum import Enum
 from typing import List
 
@@ -101,9 +100,6 @@ class MountPoint(YAMLWizard):
     path: str
     options: List[str]
 
-    # def to_yml(cls, representer, node):
-    #     pass
-
 @dataclass
 class Partition(YAMLWizard):
     label: str
@@ -119,12 +115,12 @@ class Partition(YAMLWizard):
 class Device(YAMLWizard):
     path: str
     partition_table: PartitionTable
-    partitions: List[Partition]
+    partitions: List[Partition] | None = None
 
 @dataclass
 class Dataset(YAMLWizard):
     name: str
-    mount_point: MountPoint
+    mount_point: MountPoint | None = None
 
 @dataclass
 class Pool(YAMLWizard):
@@ -187,59 +183,6 @@ class Configuration(YAMLWizard):
 
     def load(file: str) -> Self:
         return Configuration.from_yaml_file(file)
-
-
-# This only work with yaml.dump(), not supported in yaml.safe_dump().
-class IndentDumper(yaml.Dumper):
-    def increase_indent(self, flow=False, indentless=False):
-        return super(IndentDumper, self).increase_indent(flow, False)
-
-# Add the custom representers for dumping the enum class' to yaml.
-def file_system_enum_representer(dumper: yaml.dumper.Dumper, data: dataclass):
-    return dumper.represent_str(str(data.value))
-
-# Add the custom representers for dumping the enum class' to yaml.
-def file_system_enum_representer(dumper: yaml.dumper.Dumper, data: FileSystem):
-    return dumper.represent_str(str(data.value))
-
-def partition_table_enum_representer(dumper: yaml.dumper.Dumper, data: PartitionTable):
-    return dumper.represent_str(str(data.value))
-
-def role_enum_representer(dumper: yaml.dumper.Dumper, data: Role):
-    return dumper.represent_str(str(data.value))
-
-def partition_flags_enum_representer(dumper: yaml.dumper.Dumper, data: PartitionFlags):
-    return dumper.represent_str(str(data.value))
-
-yaml.add_representer(FileSystem, file_system_enum_representer)
-yaml.SafeDumper.add_multi_representer(FileSystem, yaml.representer.SafeRepresenter.represent_str)
-
-yaml.add_representer(PartitionTable, partition_table_enum_representer)
-yaml.SafeDumper.add_multi_representer(PartitionTable, yaml.representer.SafeRepresenter.represent_str)
-
-yaml.add_representer(PartitionFlags, partition_flags_enum_representer)
-yaml.SafeDumper.add_multi_representer(PartitionFlags, yaml.representer.SafeRepresenter.represent_str)
-
-yaml.add_representer(Role, role_enum_representer)
-yaml.SafeDumper.add_multi_representer(Role, yaml.representer.SafeRepresenter.represent_str)
-
-# This is needed to convert the enums to strings for the asdict() function.
-def asdict_factory(data: Any) -> Dict[str, Any]:
-    def convert_value(obj):
-        if isinstance(obj, Enum):
-            return obj.value
-        return obj
-    # result = dict(data)
-    # # Check if the first element of 'data' is a field from a dataclass instance
-    # # and if that instance has a __class__ attribute.
-    # if data and hasattr(data[0][1], '__class__'):
-    #     # Get the class name from the instance
-    #     class_name = data[0][1].__class__.__name__
-    #     result['__class__'] = class_name
-    #     return result
-
-    return dict((k, convert_value(v)) for k, v in data)
-
 
 if __name__ == "__main__":
     # Configure an example disk lay-out.
