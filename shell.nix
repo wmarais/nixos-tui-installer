@@ -3,8 +3,8 @@ let
   pythonEnv =  pkgs.python313.withPackages (ps: with ps; [
     pip
     virtualenv
-    #pyyaml
-    ruyaml
+    pyyaml
+    #dataclass-wizard
     psutil
     debugpy
   ]);
@@ -39,13 +39,25 @@ pkgs.mkShell {
     pkgs.vivid
     pkgs.bash
     pythonEnv
+    pkgs.python313
+    pkgs.python313Packages.pip
+    pkgs.python313Packages.setuptools
+    pkgs.python313Packages.wheel
+    pkgs.python313Packages.pyyaml
+
+    #pkgs.python313Packages.pyjson5
+    #pkgs.python313Packages.pyyaml
+    #pkgs.python313Packages.dataclass-wizard
     #vscodeEnv
   ];
 
   shellHook = ''
-    #echo "nix-shell ready with Python: $(which python)"
-    #virtualenv .venv
-    #source venv/bin/activate
+    echo "nix-shell ready with Python: $(which python)"
+    if [ ! -d .venv ]; then
+      virtualenv .venv
+    fi
+    source .venv/bin/activate
+    pip install "dataclass-wizard[yaml]"
   '';
 }
 

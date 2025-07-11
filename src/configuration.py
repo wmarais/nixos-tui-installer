@@ -1,7 +1,9 @@
 import yaml
 from dataclasses import dataclass, asdict
+from dataclass_wizard import YAMLWizard
 from typing import Self, Dict, Any
 from enum import Enum
+from typing import List
 
 class FileSystem(Enum):
     BTRFS:      str = "btrfs"
@@ -18,16 +20,16 @@ class FileSystem(Enum):
     UDF:        str = "udf"
     XFS:        str = "xfs"
     NONE:       str = ""
-        
+
     def __getitem__(self, name) -> str:
         return self.value
-    
+
     def startswith(self, value) -> bool:
         return self.value.startswith(value)
-    
+
     def __len__(self):
         return len(self.value)
-    
+
 
 class PartitionTable(Enum):
     AIX:        str = "aix"
@@ -43,10 +45,10 @@ class PartitionTable(Enum):
 
     def __getitem__(self, name) -> str:
         return self.value
-    
+
     def startswith(self, value) -> bool:
         return self.value.startswith(value)
-    
+
     def __len__(self):
         return len(self.value)
 
@@ -71,10 +73,10 @@ class PartitionFlags(Enum):
 
     def __getitem__(self, name) -> str:
         return self.value
-    
+
     def startswith(self, value) -> bool:
         return self.value.startswith(value)
-    
+
     def __len__(self):
         return len(self.value)
 
@@ -87,72 +89,72 @@ class Role(Enum):
 
     def __getitem__(self, name) -> str:
         return self.value
-    
+
     def startswith(self, value) -> bool:
         return self.value.startswith(value)
-    
+
     def __len__(self):
         return len(self.value)
 
 @dataclass
-class MountPoint:
+class MountPoint(YAMLWizard):
     path: str
-    options: list[str]
+    options: List[str]
 
-    def to_yml(cls, representer, node):
-        pass
+    # def to_yml(cls, representer, node):
+    #     pass
 
 @dataclass
-class Partition:
+class Partition(YAMLWizard):
     label: str
     start: str
     end: str
     file_system: FileSystem
     bootable: bool
-    mount_point: MountPoint
-    flags: list[PartitionFlags]
+    mount_point: MountPoint | None = None
+    flags: List[PartitionFlags] | None = None
     index: int = -1
 
 @dataclass
-class Device:
+class Device(YAMLWizard):
     path: str
     partition_table: PartitionTable
-    partitions: list[Partition]
+    partitions: List[Partition]
 
 @dataclass
-class Dataset:
+class Dataset(YAMLWizard):
     name: str
     mount_point: MountPoint
 
 @dataclass
-class Pool:
+class Pool(YAMLWizard):
     name: str
-    devices: list[str]
-    data_sets: list[Dataset]
+    devices: List[str]
+    data_sets: List[Dataset]
 
 @dataclass
-class ZFS:
-    pools: list[Pool]
+class ZFS(YAMLWizard):
+    pools: List[Pool]
 
 @dataclass
-class Storage:
+class Storage(YAMLWizard):
     name: str
     description: str
-    devices: list[Device]
+    devices: List[Device]
     zfs: ZFS
 
 @dataclass
-class Firewall:
+class Firewall(YAMLWizard):
     enable: bool
     allow_ping: bool
     allow_ssh: bool
 
 @dataclass
-class Network:
+class Network(YAMLWizard):
     hostname: str
     hostid: str
-    ipv4_addrs: list[str] 
-    ipv6_addrs: list[str]
+    ipv4_addrs: List[str]
+    ipv6_addrs: List[str]
     domain: str
     enable_dhcp: bool
     enable_ipv6: bool
@@ -160,41 +162,38 @@ class Network:
     firewall: Firewall
 
 @dataclass
-class NixStore:
+class NixStore(YAMLWizard):
     allow_unfree: bool
     auto_upgrade: bool
     auto_clean: bool
     auto_optimise: bool
 
 @dataclass
-class Host:
+class Host(YAMLWizard):
     time_zone: str
     locale: str
     key_map: str
-    roles: list[Role]
+    roles: List[Role]
 
 @dataclass
-class Configuration:
+class Configuration(YAMLWizard):
     name: str
     descritpion: str
     storage: Storage
     network: Network
 
     def save(self, file: str):
-        with open(file, "w") as file:
-            config_dict = asdict(self, dict_factory=asdict_factory)
-            yaml.safe_dump(config_dict, file, sort_keys=False, default_flow_style=False)
+        self.to_yaml_file(file)
 
     def load(file: str) -> Self:
-        with open(file, "r") as file:
-            data = yaml.safe_load(file)
-            return Configuration(**data)
+        return Configuration.from_yaml_file(file)
+
 
 # This only work with yaml.dump(), not supported in yaml.safe_dump().
 class IndentDumper(yaml.Dumper):
     def increase_indent(self, flow=False, indentless=False):
         return super(IndentDumper, self).increase_indent(flow, False)
-    
+
 # Add the custom representers for dumping the enum class' to yaml.
 def file_system_enum_representer(dumper: yaml.dumper.Dumper, data: dataclass):
     return dumper.represent_str(str(data.value))
@@ -263,11 +262,12 @@ if __name__ == "__main__":
     ])
 
     # Setup the example storage configuration.
-    storage = Storage("single_disk_zfs_root", "A single disk structure with a ZFS root.", 
-                      [("device", device)], zfs)
-    
-    network = Network("mypc01", "12345678", ["192.168.1.1/24"], [], "", False, False, True, None)
-    
+    storage = Storage("single_disk_zfs_root", "A single disk structure with a ZFS root.",
+                      [device], zfs)
+
+    network = Network("mypc01", "12345678", ["192.168.1.1/24"], [], "", False, False, True,
+                      Firewall(True, True, True))
+
 
     config = Configuration("single_disk_zfs_root", "Setting up NixOS on a single Disk, using a \
 ZFS root file system.", storage, network)
@@ -275,4 +275,4 @@ ZFS root file system.", storage, network)
     config.save("config.yml")
     config = Configuration.load("config.yml")
 
-    print(config.storage['devices'])
+    print(config.storage.devices)
