@@ -109,7 +109,7 @@ class Partition(YAMLWizard):
     bootable: bool
     mount_point: MountPoint | None = None
     flags: List[PartitionFlags] | None = None
-    index: int = -1
+    index: int | None = None
 
 @dataclass
 class Device(YAMLWizard):
@@ -137,7 +137,7 @@ class Storage(YAMLWizard):
     name: str
     description: str
     devices: List[Device]
-    zfs: ZFS
+    zfs: ZFS | None = None
 
 @dataclass
 class Firewall(YAMLWizard):
@@ -155,7 +155,7 @@ class Network(YAMLWizard):
     enable_dhcp: bool
     enable_ipv6: bool
     enable_doh: bool
-    firewall: Firewall
+    firewall: Firewall | None = None
 
 @dataclass
 class NixStore(YAMLWizard):
@@ -206,10 +206,9 @@ if __name__ == "__main__":
 
     # Setup the example storage configuration.
     storage = Storage("single_disk_zfs_root", "A single disk structure with a ZFS root.",
-                      [device], zfs)
+                      [device], None)
 
-    network = Network("mypc01", "12345678", ["192.168.1.1/24"], [], "", False, False, True,
-                      Firewall(True, True, True))
+    network = Network("mypc01", "12345678", ["192.168.1.1/24"], [], "", False, False, True, None)
 
 
     config = Configuration("single_disk_zfs_root", "Setting up NixOS on a single Disk, using a \
